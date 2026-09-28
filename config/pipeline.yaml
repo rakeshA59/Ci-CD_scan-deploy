@@ -1,0 +1,65 @@
+# ---------------------------------------------------------------
+# Code Intelligence Platform – pipeline configuration (V1 / Python)
+# ---------------------------------------------------------------
+
+llm:
+  # provider: auto | openai | anthropic | azure_openai | none
+  #   auto (default) = use whichever key is in .env: OPENAI_API_KEY, then AZURE_OPENAI_*, then ANTHROPIC_API_KEY.
+  #   none / no key  = deterministic offline mode (heuristic summary, rule-based triage, smoke tests).
+  provider: ${LLM_PROVIDER:-auto}
+  # model: empty = provider default (openai: gpt-4o, anthropic: claude-sonnet-5). A model from the other
+  # provider (e.g. claude-* with openai) is ignored with a warning.
+  model: ${LLM_MODEL:-}
+  temperature: 0.1
+  max_tokens: 8000
+  timeout_seconds: 180
+
+security:
+  scanners:
+    bandit: true        # Python SAST
+    semgrep: true       # SAST patterns (p/python, p/secrets ...)
+    pip_audit: true     # Python dependency CVEs
+    gitleaks: true      # hard-coded secrets
+    ruff: true          # code quality / lint
+    trivy_fs: true      # filesystem deps + misconfig (Dockerfile, IaC)
+  semgrep_configs: ["p/python", "p/secrets"]
+  # If a scanner binary is missing, run it through its Docker image instead.
+  docker_fallback: true
+  # Findings LLM-triaged in detail (highest severity first).
+  max_findings_for_llm_triage: 25
+
+quality_gate:
+  security:
+    critical_vulnerabilities: 0     # max allowed
+    high_vulnerabilities: 0
+    secrets: 0
+    # Treat a scanner that could not run as a gate failure?
+    fail_on_skipped_scanner: false
+  testing:
+    test_pass_rate: 100             # percent, min
+    minimum_coverage: 60            # percent, min (raise to 80 once tests mature)
+  container:
+    container_critical_vulnerabilities: 0
+    container_high_vulnerabilities: 5
+    dockerfile_high_issues: 0
+    require_image_scan: true        # fail if Trivy could not scan the image
+    require_smoke_run: true         # fail if the container crashes on start-up
+
+testing:
+  generate_tests: true
+  # Create an isolated virtualenv per run and install the target repo's requirements.
+  use_venv: true
+  max_modules_for_generation: 15
+  max_repair_attempts: 2           # LLM repair loops for failing generated tests
+  pytest_timeout_seconds: 900
+  max_cached_envs: 3               # test virtualenvs kept in .cip/venvs (oldest removed – they are large)
+
+packaging:
+  build_wheel: true                # only if pyproject.toml / setup.py exists
+  sbom: true                       # CycloneDX SBOM via Trivy
+
+container:
+  enabled: true
+  generate_dockerfile_if_missing: true
+  image_name: ${IMAGE_NAME:-}      # default: <repo-name>:<run-id>
+  base_image: python:3.12-slim

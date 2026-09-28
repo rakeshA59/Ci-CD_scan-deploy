@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CIP Pipeline</title>
+<link rel="icon" href="data:,">
+<style>
+:root{
+  --bg:#f6f6f3; --panel:#ffffff; --panel-2:#f0efea; --fg:#1b1b19; --muted:#6a6a64; --line:#e3e2dc;
+  --accent:#2f5bd3; --accent-soft:#e7edfb;
+  --pass:#1f7a4d; --pass-soft:#e3f2ea; --fail:#b3261e; --fail-soft:#fbe7e5;
+  --warn:#8a5a00; --warn-soft:#fbf0d9; --skip:#6a6a64; --skip-soft:#efeeea;
+  --run:#2f5bd3; --code:#f3f2ee; --shadow:0 1px 2px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#141413; --panel:#1d1d1b; --panel-2:#252522; --fg:#ecebe6; --muted:#a09f98; --line:#33322e;
+    --accent:#7aa2ff; --accent-soft:#1f2a44;
+    --pass:#4cc38a; --pass-soft:#16301f; --fail:#ff7b72; --fail-soft:#3a1a18;
+    --warn:#e3b341; --warn-soft:#352a12; --skip:#a09f98; --skip-soft:#2a2a27;
+    --run:#7aa2ff; --code:#262623; --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input{font:inherit;color:inherit}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;font-size:12.5px}
+a{color:var(--accent)}
+.wrap{max-width:1280px;margin:0 auto;padding:0 20px}
+header{border-bottom:1px solid var(--line);background:var(--panel)}
+header .wrap{display:flex;align-items:center;gap:16px;min-height:56px;flex-wrap:wrap;padding-top:8px;padding-bottom:8px}
+.brand{display:flex;align-items:baseline;gap:10px}
+.brand b{font-size:17px;letter-spacing:.2px}
+.brand span{color:var(--muted);font-size:13px}
+.tools{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:99px;font-size:12px;border:1px solid var(--line);background:var(--panel-2);color:var(--muted);white-space:nowrap}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:var(--skip)}
+.chip.ok{color:var(--fg)} .chip.ok .dot{background:var(--pass)}
+.chip.bad .dot{background:var(--fail)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+.launch{margin:20px 0;padding:18px}
+.launch label.big{display:block;font-weight:600;margin-bottom:8px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.repo{flex:1 1 420px;min-width:0;padding:11px 13px;border:1px solid var(--line);border-radius:9px;background:var(--bg);font-size:15px}
+.repo:focus,.small:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.small{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);width:170px}
+.btn{padding:11px 20px;border-radius:9px;border:1px solid transparent;background:var(--accent);color:#fff;font-weight:600;cursor:pointer}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--fg);border-color:var(--line);font-weight:500;padding:7px 12px}
+.opts{margin-top:12px;gap:18px;color:var(--muted);font-size:13px}
+.opts label{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+.err{color:var(--fail);margin-top:10px;display:none}
+.grid{display:grid;grid-template-columns:330px minmax(0,1fr);gap:20px;margin-bottom:40px}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+.side{display:flex;flex-direction:column;gap:20px}
+.panel-h{padding:14px 16px 10px;font-weight:600;display:flex;align-items:center;gap:8px}
+.panel-h small{color:var(--muted);font-weight:400}
+.steps{list-style:none;margin:0;padding:0 8px 10px}
+.step{display:grid;grid-template-columns:30px 1fr auto;gap:10px;padding:9px 8px;border-radius:9px;cursor:pointer;align-items:start}
+.step:hover{background:var(--panel-2)}
+.step.sel{background:var(--accent-soft)}
+.ico{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;border:1.5px solid var(--line);color:var(--muted);background:var(--panel)}
+.step .t{font-weight:600;font-size:13.5px}
+.step .p{color:var(--muted);font-size:12px;line-height:1.35}
+.step .d{color:var(--muted);font-size:12px;white-space:nowrap;padding-top:3px}
+.st-running .ico{border-color:var(--run);color:var(--run);animation:pulse 1.2s ease-in-out infinite}
+.st-passed .ico{background:var(--pass);border-color:var(--pass);color:#fff}
+.st-failed .ico{background:var(--fail);border-color:var(--fail);color:#fff}
+.st-warning .ico{background:var(--warn);border-color:var(--warn);color:#fff}
+.st-skipped .ico{background:var(--skip-soft);border-color:var(--skip);color:var(--skip)}
+.st-notrun{opacity:.5}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 var(--accent-soft)}50%{box-shadow:0 0 0 5px var(--accent-soft)}}
+.hist{list-style:none;margin:0;padding:0 8px 10px;max-height:340px;overflow:auto}
+.hist li{padding:8px;border-radius:8px;cursor:pointer;display:grid;grid-template-columns:1fr auto;gap:2px 8px}
+.hist li:hover{background:var(--panel-2)}
+.hist .n{font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hist .m{color:var(--muted);font-size:12px;grid-column:1/3}
+.badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11.5px;font-weight:700;letter-spacing:.3px}
+.b-PASS,.b-passed,.b-ok{background:var(--pass-soft);color:var(--pass)}
+.b-FAIL,.b-failed,.b-error{background:var(--fail-soft);color:var(--fail)}
+.b-INCOMPLETE,.b-warning,.b-findings{background:var(--warn-soft);color:var(--warn)}
+.b-SKIPPED,.b-skipped,.b-ANALYSIS{background:var(--skip-soft);color:var(--skip)}
+.b-RUNNING{background:var(--accent-soft);color:var(--accent)}
+.main{min-width:0;display:flex;flex-direction:column;gap:16px}
+.runhead{padding:16px}
+.runhead h2{margin:0;font-size:18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.meta{color:var(--muted);font-size:12.5px;margin-top:4px;display:flex;gap:14px;flex-wrap:wrap}
+.links{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{padding:12px 14px}
+.kpi .k{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.5px}
+.kpi .v{font-size:20px;font-weight:700;margin-top:2px}
+.kpi .s{color:var(--muted);font-size:12px}
+.sevrow{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}
+.sev{font-size:12px;padding:1px 7px;border-radius:6px;background:var(--panel-2)}
+.sev.C,.sev.H{color:var(--fail)} .sev.M{color:var(--warn)}
+.detail{padding:0 0 8px}
+.detail .panel-h{border-bottom:1px solid var(--line);flex-wrap:wrap}
+.detail .purpose{color:var(--muted);font-weight:400;font-size:13px;width:100%}
+.follow{margin-left:auto}
+.ev{padding:6px 16px;display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:start}
+.ev .i{color:var(--muted);text-align:center;padding-top:1px}
+.ev.action{margin-top:6px}
+.ev.action .x{font-weight:600}
+.ev.detail .x{color:var(--muted);white-space:pre-wrap;word-break:break-word;font-size:13px}
+.ev.log .x{color:var(--muted);font-size:12.5px;white-space:pre-wrap;word-break:break-word}
+.ev.log.warning .x{color:var(--warn)} .ev.log.error .x{color:var(--fail)}
+.cmd{display:flex;gap:8px;align-items:flex-start;background:var(--code);border:1px solid var(--line);border-radius:8px;padding:7px 9px}
+.cmd code{white-space:pre-wrap;word-break:break-all;flex:1}
+.cmd button{border:1px solid var(--line);background:var(--panel);border-radius:6px;font-size:11.5px;padding:1px 7px;cursor:pointer;color:var(--muted)}
+.ev.result .x{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.gate{margin:8px 16px 4px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.gate h4{margin:0;padding:8px 12px;background:var(--panel-2);font-size:13px;display:flex;gap:8px;align-items:center}
+.gate table{width:100%;border-collapse:collapse;font-size:13px}
+.gate td{padding:6px 12px;border-top:1px solid var(--line)}
+.gate td.r{text-align:right;white-space:nowrap}
+.gate .note{padding:6px 12px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px}
+.empty{padding:40px 20px;text-align:center;color:var(--muted)}
+.spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--accent-soft);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;vertical-align:-2px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tests{margin:10px 16px 6px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.tests h4{margin:0;padding:9px 12px;background:var(--panel-2);font-size:13px}
+.tfile{border-top:1px solid var(--line);padding:10px 12px}
+.tfile .hd{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-weight:600}
+.tfile .sub{color:var(--muted);font-size:12px;font-weight:400}
+.tlist{margin:8px 0 0;padding:0;list-style:none}
+.tlist li{display:grid;grid-template-columns:auto 1fr;gap:8px;padding:3px 0;font-size:13px;align-items:baseline}
+.tlist .msg{grid-column:2;color:var(--fail);font-size:12px;white-space:pre-wrap;word-break:break-word}
+details.code summary{cursor:pointer;color:var(--accent);font-size:12.5px;margin-top:6px}
+details.code pre{margin:6px 0 0;max-height:420px;overflow:auto;background:var(--code);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:12px}
+.b-xfail{background:var(--warn-soft);color:var(--warn)}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="brand"><b>CIP</b><span>Code assessment pipeline · checkout → scan → test → package → containerize</span></div>
+    <div class="tools" id="tools"><span class="chip">checking tools…</span></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <form class="card launch" id="form" autocomplete="off">
+    <label class="big" for="repo">GitHub repository to assess</label>
+    <div class="row">
+      <input class="repo" id="repo" placeholder="https://github.com/org/repo   ·   org/repo   ·   C:\path\to\local\repo" required>
+      <input class="small" id="branch" placeholder="branch (optional)">
+      <button class="btn" id="runBtn" type="submit">Run pipeline</button>
+    </div>
+    <div class="row opts">
+      <label><input type="checkbox" id="cof" checked> Continue past failed gates</label>
+      <label><input type="checkbox" id="tests" checked> Run unit tests</label>
+      <label><input type="checkbox" id="container" checked> Build &amp; scan container</label>
+      <label><input type="checkbox" id="llm" checked> Use LLM (if key set)</label>
+    </div>
+    <div class="err" id="err"></div>
+  </form>
+
+  <div class="grid">
+    <aside class="side">
+      <div class="card">
+        <div class="panel-h">Pipeline steps <small id="stepsNote"></small></div>
+        <ol class="steps" id="steps"></ol>
+      </div>
+      <div class="card">
+        <div class="panel-h">Recent runs <button class="btn ghost follow" id="refresh" type="button">Refresh</button></div>
+        <ul class="hist" id="hist"></ul>
+      </div>
+    </aside>
+
+    <section class="main">
+      <div class="card runhead hide" id="runhead">
+        <h2><span id="rh-name"></span><span class="badge b-RUNNING" id="rh-badge">RUNNING</span></h2>
+        <div class="meta" id="rh-meta"></div>
+        <div class="links" id="rh-links"></div>
+      </div>
+      <div class="cards hide" id="cards"></div>
+      <div class="card detail" id="detail">
+        <div class="empty" id="emptyMsg">Enter a GitHub URL above and press <b>Run pipeline</b>.<br>Each step appears on the left as it runs; click a step to see exactly what it did.</div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ICON = {passed:"✓", failed:"✕", warning:"!", skipped:"–", running:"", pending:"", notrun:""};
+
+const DEFAULT_STEPS = ["CHECKOUT","DISCOVERY","CODE SCANNING","SECURITY TRIAGE & GATE","UNIT TESTS","PACKAGE","CONTAINERIZE","REPORT"];
+const PURPOSE = {
+  "CHECKOUT":"Get the code from GitHub",
+  "DISCOVERY":"Files, dependencies, code structure → tech stack",
+  "CODE SCANNING":"Static analysis, vulnerabilities, dependencies, secrets",
+  "SECURITY TRIAGE & GATE":"Explain findings, pass/fail by rules",
+  "UNIT TESTS":"Repo's tests + generated tests, coverage",
+  "PACKAGE":"Wheel or source bundle + SBOM",
+  "CONTAINERIZE":"Dockerfile, build, start-up check, image scan",
+  "REPORT":"HTML / Markdown / JSON report"
+};
+
+let S = null;          // current run state
+let es = null;         // EventSource
+let follow = true;
+
+function newState(run, steps){
+  return {run, steps:(steps||DEFAULT_STEPS).map((t,i)=>({n:i+1,title:t,purpose:PURPOSE[t]||"",status:"pending",events:[],stages:[],gates:[],t0:null,t1:null})),
+          cur:0, sel:1, start:null, source:null, done:null, t0:Date.now()/1000};
+}
+
+// ---------------------------------------------------------------- tools
+async function loadDoctor(){
+  try{
+    const d = await (await fetch("/api/doctor")).json();
+    const chips = Object.entries(d.tools).map(([k,v]) => {
+      let cls = v ? "ok" : "bad", label = k;
+      if(k==="docker" && v && !d.docker_running){cls="bad"; label="docker (not running)";}
+      return `<span class="chip ${cls}" title="${v?'installed':'not found on PATH'}"><span class="dot"></span>${esc(label)}</span>`;
+    });
+    chips.push(`<span class="chip ${d.llm_enabled?'ok':'bad'}" title="${esc(d.llm)}${d.llm_note?' – '+esc(d.llm_note):''}"><span class="dot"></span>LLM ${d.llm_enabled?esc(d.llm):'off'}</span>`);
+    if(d.disk_free_gb!=null) chips.push(`<span class="chip ${d.disk_free_gb>=3?'ok':'bad'}" title="free space on the drive CIP uses"><span class="dot"></span>${d.disk_free_gb} GB free</span>`);
+    chips.push(`<span class="chip ${d.github_token?'ok':''}" title="needed only for private repos"><span class="dot"></span>GitHub token</span>`);
+    $("tools").innerHTML = chips.join("");
+  }catch(e){ $("tools").innerHTML = `<span class="chip bad"><span class="dot"></span>server not reachable</span>`; }
+}
+
+// ---------------------------------------------------------------- history
+async function loadHistory(){
+  const rows = await (await fetch("/api/runs")).json();
+  $("hist").innerHTML = rows.length ? rows.map(r => {
+    const ov = r.active ? "RUNNING" : (r.overall || "?");
+    const src = (r.source||r.run).replace(/^https?:\/\/github\.com\//,"").replace(/\.git$/,"");
+    return `<li data-run="${esc(r.run)}" data-events="${r.has_events?1:0}"><span class="n" title="${esc(r.source)}">${esc(src)}</span>
+      <span class="badge b-${esc(ov.split(" ")[0])}">${esc(ov)}</span>
+      <span class="m">${esc((r.started_at||"").replace("T"," "))}${r.commit?" · "+esc(r.commit):""}${r.duration_s?" · "+r.duration_s+"s":""}</span></li>`;
+  }).join("") : `<li class="m" style="cursor:default"><span class="m">No runs yet.</span></li>`;
+  [...$("hist").querySelectorAll("li[data-run]")].forEach(li => li.onclick = () => {
+    if(li.dataset.events==="1") openRun(li.dataset.run);
+    else window.open(`/runs/${encodeURIComponent(li.dataset.run)}/assessment_report.html`, "_blank");
+  });
+}
+
+// ---------------------------------------------------------------- run
+$("form").onsubmit = async (e) => {
+  e.preventDefault();
+  $("err").style.display = "none";
+  const body = {repo:$("repo").value.trim(), branch:$("branch").value.trim()||null, continue_on_fail:$("cof").checked,
+                run_tests:$("tests").checked, containerize:$("container").checked, use_llm:$("llm").checked};
+  $("runBtn").disabled = true;
+  try{
+    const r = await fetch("/api/runs", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
+    const j = await r.json();
+    if(!r.ok) throw new Error(j.detail || r.statusText);
+    openRun(j.run, j.steps);
+    loadHistory();
+  }catch(err){
+    $("err").textContent = err.message; $("err").style.display = "block"; $("runBtn").disabled = false;
+  }
+};
+
+function openRun(run, steps){
+  if(es) es.close();
+  S = newState(run, steps); follow = true;
+  $("runhead").classList.remove("hide");
+  $("cards").classList.add("hide"); $("cards").innerHTML = "";
+  $("rh-name").textContent = run; setBadge("RUNNING");
+  $("rh-meta").innerHTML = ""; $("rh-links").innerHTML = "";
+  renderSteps(); renderDetail();
+  es = new EventSource(`/api/runs/${encodeURIComponent(run)}/events`);
+  es.onmessage = (m) => { handle(JSON.parse(m.data)); };
+  es.addEventListener("end", () => { es.close(); if(!S.done){ finishSteps(); } $("runBtn").disabled = false; });
+  es.onerror = () => { if(S && S.done){ es.close(); } };
+}
+
+function setBadge(v){ const b=$("rh-badge"); b.textContent=v; b.className="badge b-"+v.split(" ")[0]; }
+
+function curStep(){ return S.steps[S.cur-1]; }
+
+function handle(ev){
+  if(ev.type==="start"){
+    S.start = ev;
+    if(ev.steps && ev.steps.length !== S.steps.length){ const old=S; S=newState(old.run, ev.steps); S.start=ev; }
+    $("rh-name").textContent = ev.repo;
+    renderMeta();
+    return;
+  }
+  if(ev.type==="source"){ S.source = ev.info || {}; renderMeta(); }
+  if(ev.type==="step"){
+    if(S.cur) closeStep(curStep(), ev.t);
+    S.cur = ev.n;
+    const st = curStep(); st.status="running"; st.t0=ev.t; st.title=ev.title; st.purpose=ev.purpose;
+    if(follow) S.sel = ev.n;
+    renderSteps(); if(follow) renderDetail();
+    return;
+  }
+  if(ev.type==="done"){
+    S.done = ev;
+    if(S.cur) closeStep(curStep(), ev.t);
+    finishSteps();
+    setBadge(ev.overall);
+    const links = [];
+    if(ev.reports && ev.reports.html) links.push(`<a class="btn ghost" target="_blank" href="/runs/${ev.reports.html}">Open full HTML report</a>`);
+    links.push(`<a class="btn ghost" target="_blank" href="/runs/${encodeURIComponent(S.run)}/pipeline.log">pipeline.log</a>`);
+    links.push(`<a class="btn ghost" target="_blank" href="/runs/${encodeURIComponent(S.run)}/artifacts/security_report.json">Security findings (JSON)</a>`);
+    $("rh-links").innerHTML = links.join("");
+    renderCards(ev.summary||{}, ev);
+    renderMeta();
+    $("runBtn").disabled = false;
+    loadHistory();
+    renderDetail();
+    return;
+  }
+  if(!S.cur) return;  // header detail lines before step 1
+  const st = curStep();
+  if(ev.type==="stage") st.stages.push(ev);
+  if(ev.type==="gate") st.gates.push(ev);
+  st.events.push(ev);
+  if(S.sel===S.cur) appendEvent(ev);
+}
+
+function closeStep(st, t){
+  st.t1 = t;
+  const ss = st.stages.map(s=>s.status);
+  const gateFail = st.gates.some(g => !g.passed && !g.skipped);
+  if(ss.includes("failed") || ss.includes("error") || gateFail) st.status="failed";
+  else if(ss.includes("warning")) st.status="warning";
+  else if(ss.length && ss.every(s=>s==="skipped")) st.status="skipped";
+  else st.status="passed";
+  renderSteps();
+}
+
+function finishSteps(){
+  S.steps.forEach(s => { if(s.status==="pending") s.status="notrun"; });
+  renderSteps();
+}
+
+function fmtDur(st){
+  if(st.t0 && st.t1) return (st.t1-st.t0).toFixed(1)+"s";
+  if(st.status==="running" && st.t0) return ((Date.now()/1000)-st.t0).toFixed(0)+"s";
+  return "";
+}
+
+function renderSteps(){
+  $("steps").innerHTML = S ? S.steps.map(st => `
+    <li class="step st-${st.status} ${S.sel===st.n?'sel':''}" data-n="${st.n}">
+      <span class="ico">${st.status==="running"?'<span class="spinner"></span>':(ICON[st.status]||st.n)||st.n}</span>
+      <span><div class="t">${st.n}. ${esc(st.title)}</div><div class="p">${esc(st.purpose)}</div></span>
+      <span class="d">${st.status==="notrun"?"not run":fmtDur(st)}</span>
+    </li>`).join("") : DEFAULT_STEPS.map((t,i)=>`
+    <li class="step st-pending"><span class="ico">${i+1}</span><span><div class="t">${i+1}. ${esc(t)}</div><div class="p">${esc(PURPOSE[t])}</div></span><span class="d"></span></li>`).join("");
+  $("stepsNote").textContent = S ? (S.done ? "finished" : S.cur ? `running step ${S.cur} of ${S.steps.length}` : "starting…") : "";
+  if(S) [...$("steps").querySelectorAll(".step")].forEach(li => li.onclick = () => {
+    S.sel = +li.dataset.n; follow = (S.sel === S.cur && !S.done); renderSteps(); renderDetail();
+  });
+}
+
+function renderMeta(){
+  const m = [];
+  if(S.start){ m.push(`source <span class="mono">${esc(S.start.source)}</span>`); if(S.start.branch) m.push(`branch ${esc(S.start.branch)}`); m.push(`LLM: ${esc(S.start.llm)}`); }
+  if(S.source && S.source.commit) m.push(`commit <span class="mono">${esc(S.source.commit.slice(0,10))}</span> “${esc(S.source.commit_message||"")}”`);
+  if(S.done) m.push(`${S.done.duration_s}s total`);
+  $("rh-meta").innerHTML = m.map(x=>`<span>${x}</span>`).join("");
+}
+
+function sevPills(o){
+  if(!o) return '<span class="s">not run</span>';
+  const map = {CRITICAL:"C",HIGH:"H",MEDIUM:"M",LOW:"L"};
+  return `<div class="sevrow">${Object.entries(map).map(([k,a])=>`<span class="sev ${a}">${a} ${o[k]||0}</span>`).join("")}</div>`;
+}
+
+function renderCards(s, ev){
+  const cards = [
+    `<div class="card kpi"><div class="k">Overall</div><div class="v"><span class="badge b-${esc(ev.overall.split(" ")[0])}" style="font-size:15px">${esc(ev.overall)}</span></div><div class="s">${ev.stopped_at?"stopped at "+esc(ev.stopped_at):esc(s.app_type||"")}</div></div>`,
+    `<div class="card kpi"><div class="k">Security findings</div><div class="v">${s.findings ?? "–"} ${s.security_gate===true?'<span class="badge b-PASS">gate pass</span>':s.security_gate===false?'<span class="badge b-FAIL">gate fail</span>':''}</div>${sevPills(s.security_by_severity)}<div class="s">+ ${s.code_quality ?? 0} code-quality notes</div></div>`,
+    `<div class="card kpi"><div class="k">Unit tests</div><div class="v">${s.tests_total!=null?`${s.tests_passed}/${s.tests_total}`:"–"}</div><div class="s">coverage ${s.coverage!=null?s.coverage+"%":"–"}</div></div>`,
+    `<div class="card kpi"><div class="k">Container</div><div class="v" style="font-size:14px;word-break:break-all">${esc(s.image||"not built")}</div>${s.image?(s.image_vulns?sevPills(s.image_vulns):'<div class="s">image scan did not run</div>'):`<div class="s">${esc((s.container_note||"").slice(0,90))}</div>`}</div>`,
+    `<div class="card kpi"><div class="k">Package</div><div class="v" style="font-size:13px;word-break:break-all">${esc((s.packages||[]).join(", ")||"–")}</div></div>`
+  ];
+  $("cards").innerHTML = cards.join(""); $("cards").classList.remove("hide");
+}
+
+function renderDetail(){
+  const st = S && S.steps[S.sel-1];
+  if(!st){ return; }
+  $("detail").innerHTML = `<div class="panel-h"><span>Step ${st.n} · ${esc(st.title)}</span>
+      <span class="badge b-${st.status==="running"?"RUNNING":st.status}">${st.status==="notrun"?"NOT RUN":st.status.toUpperCase()}</span>
+      ${(!follow && !S.done)?'<button class="btn ghost follow" id="followBtn" type="button">Follow live</button>':''}
+      <span class="purpose">${esc(st.purpose)}</span></div><div id="evs"></div>`;
+  if($("followBtn")) $("followBtn").onclick = () => { follow=true; S.sel=S.cur; renderSteps(); renderDetail(); };
+  if(st.title==="UNIT TESTS" && S.done) loadTests();
+  if(!st.events.length){
+    $("evs").innerHTML = `<div class="empty">${st.status==="pending"?"Waiting for earlier steps…":st.status==="notrun"?"This step did not run (the pipeline stopped earlier or it was switched off).":'<span class="spinner"></span> working…'}</div>`;
+    return;
+  }
+  st.events.forEach(appendEvent);
+}
+
+async function loadTests(){
+  const run = S.run;
+  let d; try{ d = await (await fetch(`/api/runs/${encodeURIComponent(run)}/tests`)).json(); }catch(e){ return; }
+  if(!S || S.run!==run || !$("detail")) return;
+  const files = d.generated || [], other = d.existing_tests || [];
+  const count = (ts, s) => ts.filter(t=>t.status===s).length;
+  let html = `<div class="tests"><h4>Generated test files (${files.length}) – the code CIP wrote and ran for this repo</h4>`;
+  if(!files.length) html += `<div class="tfile sub">No generated tests were kept for this run.</div>`;
+  for(const f of files){
+    const how = f.mode==="smoke" ? "smoke test (template – no LLM)" : `written by the LLM${f.repairs?`, repaired ${f.repairs}×`:""}`;
+    html += `<div class="tfile"><div class="hd"><span class="mono">${esc(f.file)}</span>
+      <span class="badge b-${count(f.tests,"failed")+count(f.tests,"error")?"FAIL":"PASS"}">${count(f.tests,"passed")} passed · ${count(f.tests,"failed")+count(f.tests,"error")} failed${count(f.tests,"xfail")?` · ${count(f.tests,"xfail")} xfail`:""}</span>
+      <span class="sub">tests <span class="mono">${esc(f.module||"")}</span> · ${esc(how)}</span></div>
+      ${f.mode==="smoke"&&f.status==="failing"?`<div class="ev log error"><span class="i">!</span><span class="x">The app itself fails here – this is a real application error, not a test bug.</span></div>`:""}
+      ${(f.stubbed_imports||[]).length?`<div class="ev log warning"><span class="i">!</span><span class="x">These tests replace the app's real imports with fakes (${esc(f.stubbed_imports.join(", "))}) – they can pass even when the real app cannot start. Trust the smoke test for start-up.</span></div>`:""}
+      <ul class="tlist">${f.tests.map(t=>`<li><span class="badge b-${t.status==="passed"?"PASS":t.status==="xfail"?"xfail":"FAIL"}">${esc(t.status.toUpperCase())}</span><span class="mono">${esc(t.name)}</span>${t.message?`<span class="msg">${esc(t.message)}</span>`:""}</li>`).join("")}</ul>
+      <details class="code"><summary>Show test code</summary><pre><code>${esc(f.code)}</code></pre></details></div>`;
+  }
+  if(other.length) html += `<div class="tfile"><div class="hd">Repository's own tests <span class="badge b-${count(other,"failed")+count(other,"error")?"FAIL":"PASS"}">${count(other,"passed")} passed · ${count(other,"failed")+count(other,"error")} failed</span></div>
+      <ul class="tlist">${other.filter(t=>t.status!=="passed").slice(0,30).map(t=>`<li><span class="badge b-FAIL">${esc(t.status.toUpperCase())}</span><span class="mono">${esc(t.suite)}::${esc(t.name)}</span>${t.message?`<span class="msg">${esc(t.message)}</span>`:""}</li>`).join("")}</ul></div>`;
+  html += `</div>`;
+  const box = $("evs"); if(box) box.insertAdjacentHTML("afterbegin", html);
+}
+
+function appendEvent(ev){
+  const box = $("evs"); if(!box) return;
+  const empty = box.querySelector(".empty"); if(empty) empty.remove();
+  let html = "";
+  // gate checks are drawn as a table – skip their plain-text duplicates
+  if((ev.type==="action" && / GATE \(rules/.test(ev.text)) || (ev.type==="detail" && /^(\[(PASS|FAIL)\] |note: )/.test(ev.text))) return;
+  switch(ev.type){
+    case "action":  html = `<div class="ev action"><span class="i">→</span><span class="x">${esc(ev.text)}</span></div>`; break;
+    case "command": html = `<div class="ev"><span class="i">$</span><div class="cmd"><code>${esc(ev.text)}</code><button type="button" onclick="navigator.clipboard.writeText(this.previousElementSibling.textContent)">copy</button></div></div>`; break;
+    case "detail":  html = `<div class="ev detail"><span class="i"></span><span class="x">${esc(ev.text)}</span></div>`; break;
+    case "log":     html = `<div class="ev log ${ev.level}"><span class="i">·</span><span class="x">[${esc(ev.source)}] ${esc(ev.text)}</span></div>`; break;
+    case "result":  html = `<div class="ev result"><span class="i"></span><span class="x"><span class="badge b-${esc(ev.status)}">${esc(ev.status.toUpperCase())}</span><span>${esc(ev.text)}</span></span></div>`; break;
+    case "gate":
+      html = `<div class="gate"><h4>${esc(ev.gate.toUpperCase())} GATE <span class="badge b-${ev.skipped?"SKIPPED":ev.passed?"PASS":"FAIL"}">${ev.skipped?"SKIPPED":ev.passed?"PASS":"FAIL"}</span>
+        <span style="color:var(--muted);font-weight:400;font-size:12px">rules from config/pipeline.yaml – no AI involved</span></h4><table>` +
+        ev.checks.map(c=>`<tr><td>${esc(c.name)}</td><td class="r mono">${esc(c.actual)} ${esc(c.comparator)} ${esc(c.threshold)}</td><td class="r"><span class="badge b-${c.passed?"PASS":"FAIL"}">${c.passed?"PASS":"FAIL"}</span></td></tr>`).join("") +
+        `</table>${(ev.notes||[]).map(n=>`<div class="note">${esc(n)}</div>`).join("")}</div>`; break;
+    default: return;
+  }
+  box.insertAdjacentHTML("beforeend", html);
+  if(follow && !S.done) box.lastElementChild.scrollIntoView({block:"nearest"});
+}
+
+setInterval(() => { if(S && !S.done && S.cur) { const d=document.querySelector(`.step[data-n="${S.cur}"] .d`); if(d) d.textContent = fmtDur(curStep()); } }, 1000);
+$("refresh").onclick = () => { loadHistory(); loadDoctor(); };
+renderSteps(); loadDoctor(); loadHistory();
+</script>
+</body>
+</html>

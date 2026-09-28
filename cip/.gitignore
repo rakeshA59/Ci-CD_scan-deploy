@@ -1,0 +1,38 @@
+# Secrets – never push
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+secrets/
+credentials*.json
+
+# Pipeline output (reports, cloned repos, Docker build files)
+runs/
+.cip/
+
+# Python virtual environments
+.venv/
+venv/
+env/
+
+# Python caches and build output
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Editor and OS clutter
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,97 @@
+# Bundled Semgrep rules – always available even when the Semgrep registry is unreachable.
+rules:
+  - id: cip-subprocess-shell-true
+    languages: [python]
+    severity: ERROR
+    message: Subprocess invoked with shell=True. If any part of the command is user-controlled this is command injection. Pass an argument list and shell=False.
+    metadata: {cwe: ["CWE-78: OS Command Injection"], confidence: MEDIUM}
+    pattern-either:
+      - pattern: subprocess.$F(..., shell=True, ...)
+      - pattern: os.system(...)
+
+  - id: cip-sql-string-formatting
+    languages: [python]
+    severity: ERROR
+    message: SQL built with string formatting/concatenation and passed to execute(). Use parameterised queries.
+    metadata: {cwe: ["CWE-89: SQL Injection"], confidence: MEDIUM}
+    pattern-either:
+      - pattern: $CUR.execute(f"...", ...)
+      - pattern: $CUR.execute("..." % ..., ...)
+      - pattern: $CUR.execute("..." + ..., ...)
+      - pattern: $CUR.execute("...".format(...), ...)
+
+  - id: cip-eval-exec
+    languages: [python]
+    severity: ERROR
+    message: eval()/exec() on dynamic data allows arbitrary code execution.
+    metadata: {cwe: ["CWE-95: Eval Injection"], confidence: MEDIUM}
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: exec(...)
+
+  - id: cip-pickle-loads
+    languages: [python]
+    severity: ERROR
+    message: pickle deserialisation of untrusted data allows remote code execution.
+    metadata: {cwe: ["CWE-502: Deserialization of Untrusted Data"], confidence: MEDIUM}
+    pattern-either:
+      - pattern: pickle.loads(...)
+      - pattern: pickle.load(...)
+
+  - id: cip-yaml-unsafe-load
+    languages: [python]
+    severity: ERROR
+    message: yaml.load without SafeLoader can instantiate arbitrary objects. Use yaml.safe_load.
+    metadata: {cwe: ["CWE-502: Deserialization of Untrusted Data"], confidence: HIGH}
+    patterns:
+      - pattern: yaml.load(...)
+      - pattern-not: yaml.load(..., Loader=yaml.SafeLoader, ...)
+      - pattern-not: yaml.load(..., Loader=SafeLoader, ...)
+
+  - id: cip-requests-verify-false
+    languages: [python]
+    severity: WARNING
+    message: TLS certificate verification disabled.
+    metadata: {cwe: ["CWE-295: Improper Certificate Validation"], confidence: HIGH}
+    pattern: requests.$M(..., verify=False, ...)
+
+  - id: cip-weak-hash-password
+    languages: [python]
+    severity: WARNING
+    message: MD5/SHA1 are not suitable for passwords or integrity. Use bcrypt/argon2 for passwords, SHA-256+ otherwise.
+    metadata: {cwe: ["CWE-327: Use of a Broken or Risky Cryptographic Algorithm"], confidence: MEDIUM}
+    pattern-either:
+      - pattern: hashlib.md5(...)
+      - pattern: hashlib.sha1(...)
+
+  - id: cip-hardcoded-jwt-secret
+    languages: [python]
+    severity: ERROR
+    message: JWT signed with a hard-coded secret. Load the signing key from configuration / secret manager.
+    metadata: {cwe: ["CWE-798: Use of Hard-coded Credentials"], confidence: HIGH, impact: HIGH}
+    pattern-either:
+      - pattern: jwt.encode($P, "...", ...)
+      - pattern: jwt.decode($T, "...", ...)
+
+  - id: cip-cors-wildcard-credentials
+    languages: [python]
+    severity: WARNING
+    message: CORS allows any origin together with credentials.
+    metadata: {cwe: ["CWE-942: Permissive Cross-domain Policy"], confidence: MEDIUM}
+    pattern: $APP.add_middleware(..., allow_origins=["*"], ..., allow_credentials=True, ...)
+
+  - id: cip-debug-enabled
+    languages: [python]
+    severity: WARNING
+    message: Application started in debug mode / auto-reload – do not ship to production.
+    metadata: {cwe: ["CWE-489: Active Debug Code"], confidence: MEDIUM}
+    pattern-either:
+      - pattern: $APP.run(..., debug=True, ...)
+      - pattern: uvicorn.run(..., reload=True, ...)
+
+  - id: cip-bind-all-interfaces
+    languages: [python]
+    severity: INFO
+    message: Server binds to 0.0.0.0 – expected in containers, verify network exposure.
+    metadata: {cwe: ["CWE-1327"], confidence: LOW}
+    pattern: uvicorn.run(..., host="0.0.0.0", ...)

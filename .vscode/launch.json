@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "inputs": [
+    { "id": "repoPath", "type": "promptString", "description": "Path to the Python repo to assess", "default": "sample_apps/customer_api" }
+  ],
+  "configurations": [
+    { "name": "CIP: doctor (check tools)", "type": "debugpy", "request": "launch", "module": "cip.cli",
+      "args": ["doctor"], "cwd": "${workspaceFolder}", "console": "integratedTerminal" },
+    { "name": "CIP: full run – sample app", "type": "debugpy", "request": "launch", "module": "cip.cli",
+      "args": ["run", "sample_apps/customer_api", "--continue-on-fail"], "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal", "env": { "PYTHONIOENCODING": "utf-8" } },
+    { "name": "CIP: full run – choose repo", "type": "debugpy", "request": "launch", "module": "cip.cli",
+      "args": ["run", "${input:repoPath}", "--continue-on-fail"], "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal", "env": { "PYTHONIOENCODING": "utf-8" } },
+    { "name": "CIP: analyze only – choose repo", "type": "debugpy", "request": "launch", "module": "cip.cli",
+      "args": ["analyze", "${input:repoPath}"], "cwd": "${workspaceFolder}", "console": "integratedTerminal" },
+    { "name": "CIP: security scan only – choose repo", "type": "debugpy", "request": "launch", "module": "cip.cli",
+      "args": ["scan", "${input:repoPath}", "--continue-on-fail"], "cwd": "${workspaceFolder}", "console": "integratedTerminal" }
+  ]
+}

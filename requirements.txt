@@ -1,0 +1,18 @@
+# Code Intelligence Platform (CIP) – runtime requirements
+pyyaml>=6.0
+# LLM providers (install the one you use)
+anthropic>=0.40
+openai>=1.50
+# Scanners (Python-installable)
+bandit>=1.7.9
+pip-audit>=2.7
+ruff>=0.6
+semgrep>=1.90        # on Windows, if this fails to install/run, CIP falls back to the semgrep Docker image
+# Testing / packaging
+pytest>=8.0
+pytest-cov>=5.0
+pytest-timeout>=2.3
+build>=1.2
+# Web UI (python -m cip.server)
+fastapi>=0.110
+uvicorn>=0.29
