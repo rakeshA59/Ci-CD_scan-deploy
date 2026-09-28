@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student College Info</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Student College Info</h1>
+    <span id="api-status" class="badge">checking…</span>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2 id="form-title">Add student</h2>
+      <form id="student-form">
+        <input type="hidden" id="student-id" />
+        <div class="grid">
+          <label>First name <input id="first_name" required maxlength="50" /></label>
+          <label>Last name <input id="last_name" required maxlength="50" /></label>
+          <label>Email <input id="email" type="email" required maxlength="120" /></label>
+          <label>Department <input id="department" required maxlength="80" /></label>
+          <label>Year
+            <select id="year">
+              <option>1</option><option>2</option><option>3</option>
+              <option>4</option><option>5</option><option>6</option>
+            </select>
+          </label>
+        </div>
+        <div class="actions">
+          <button type="submit" id="submit-btn">Add student</button>
+          <button type="button" id="cancel-btn" class="secondary" hidden>Cancel</button>
+        </div>
+        <p id="form-message" class="message"></p>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="toolbar">
+        <h2>Students</h2>
+        <input id="search" placeholder="Search last name or department…" />
+      </div>
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Email</th><th>Department</th><th>Year</th><th></th></tr>
+        </thead>
+        <tbody id="student-rows"></tbody>
+      </table>
+    </section>
+
+    <section class="card" id="transcript-card" hidden>
+      <h2 id="transcript-title">Transcript</h2>
+      <table>
+        <thead><tr><th>Course</th><th>Title</th><th>Credits</th><th>Score</th><th>Grade</th></tr></thead>
+        <tbody id="transcript-rows"></tbody>
+      </table>
+      <p id="transcript-summary"></p>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

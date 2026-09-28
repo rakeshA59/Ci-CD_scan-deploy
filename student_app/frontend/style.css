@@ -1,0 +1,64 @@
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: #f4f6f9;
+  color: #1f2933;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: #1e3a5f;
+  color: #fff;
+}
+header h1 { margin: 0; font-size: 1.3rem; }
+
+.badge { font-size: 0.8rem; padding: 4px 10px; border-radius: 12px; background: #52606d; }
+.badge.ok { background: #2f855a; }
+.badge.down { background: #c53030; }
+
+main { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+
+.card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.card h2 { margin: 0 0 12px; font-size: 1.1rem; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+label { display: flex; flex-direction: column; font-size: 0.85rem; gap: 4px; color: #52606d; }
+input, select { padding: 8px; border: 1px solid #cbd2d9; border-radius: 4px; font-size: 0.95rem; }
+
+.actions { margin-top: 14px; display: flex; gap: 8px; }
+button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  background: #1e3a5f;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+button.secondary { background: #cbd2d9; color: #1f2933; }
+button.link { background: none; color: #1e3a5f; padding: 2px 6px; }
+button.link.danger { color: #c53030; }
+
+.toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.toolbar input { min-width: 240px; }
+
+table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.9rem; }
+th, td { text-align: left; padding: 8px; border-bottom: 1px solid #e4e7eb; }
+th { color: #52606d; font-weight: 600; }
+.row-actions { white-space: nowrap; text-align: right; }
+.empty { text-align: center; color: #9aa5b1; }
+
+.message { min-height: 1.2em; margin: 10px 0 0; font-size: 0.9rem; }
+.message.success { color: #2f855a; }
+.message.error { color: #c53030; }
